@@ -1,0 +1,78 @@
+<section class="login-container">
+  <div class="login-card">
+    <header class="login-header">
+      <h2>Iniciar Sesión</h2>
+      <p>Ingresá a UTN-BUGS para acceder a la comunidad y apuntes</p>
+    </header>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate class="login-form">
+      <div class="form-group">
+        <label for="credencial">Usuario o Correo Electrónico</label>
+        <input
+          id="credencial"
+          type="text"
+          formControlName="credencial"
+          placeholder="Ej: smoyano o usuario@utn.edu.ar"
+          autocomplete="username"
+          [class.input-error]="tieneError('credencial', 'required')"
+        />
+        @if (tieneError('credencial', 'required')) {
+          <div class="error-feedback">
+            <small>La credencial de acceso es obligatoria.</small>
+          </div>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">Contraseña</label>
+        <div class="password-input-wrapper">
+          <input
+            id="password"
+            [type]="mostrarClave() ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            [class.input-error]="tieneError('password', 'required') || tieneError('password', 'minlength') || tieneError('password', 'pattern')"
+          />
+          <button
+            type="button"
+            class="btn-toggle-clave"
+            (click)="toggleVerClave()"
+            [attr.aria-label]="mostrarClave() ? 'Ocultar contraseña' : 'Ver contraseña'"
+          >
+            {{ mostrarClave() ? 'Ocultar' : 'Ver' }}
+          </button>
+        </div>
+
+        @if (tieneError('password', 'required')) {
+          <div class="error-feedback">
+            <small>La contraseña es obligatoria.</small>
+          </div>
+        }
+        @if (tieneError('password', 'minlength')) {
+          <div class="error-feedback">
+            <small>Debe poseer al menos 8 caracteres.</small>
+          </div>
+        }
+        @if (tieneError('password', 'pattern')) {
+          <div class="error-feedback">
+            <small>Debe poseer al menos una mayúscula y un número.</small>
+          </div>
+        }
+      </div>
+
+      <button
+        type="submit"
+        class="btn-submit"
+        [disabled]="loginForm.invalid || cargando()"
+      >
+        {{ cargando() ? 'Ingresando...' : 'Iniciar Sesión' }}
+      </button>
+
+      <footer class="login-footer">
+        <span>¿No tenés una cuenta?</span>
+        <a routerLink="/registro">Registrate acá</a>
+      </footer>
+    </form>
+  </div>
+</section>

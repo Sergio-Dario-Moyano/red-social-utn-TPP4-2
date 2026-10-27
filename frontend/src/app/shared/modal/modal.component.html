@@ -1,0 +1,28 @@
+@if (isOpen) {
+<div class="modal-overlay" (click)="cerrar(false)">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <h3>{{ config?.titulo }}</h3>
+    </header>
+
+    <div class="modal-body">
+      <p>{{ config?.mensaje }}</p>
+    </div>
+
+    <footer class="modal-actions">
+      @if (config?.esConfirmacion) {
+        <button type="button" class="btn-modal-cancel" (click)="cerrar(false)">
+          {{ config?.textoCancelar || 'Cancelar' }}
+        </button>
+        <button type="button" class="btn-modal-confirm btn-modal-danger" (click)="cerrar(true)">
+          {{ config?.textoConfirmar || 'Aceptar' }}
+        </button>
+      } @else {
+        <button type="button" class="btn-modal-confirm" (click)="cerrar(false)">
+          {{ config?.textoBoton || 'Entendido' }}
+        </button>
+      }
+    </footer>
+  </div>
+</div>
+}

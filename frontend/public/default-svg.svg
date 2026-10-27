@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" fill="none">
+  <!-- Fondo con la paleta oscura de la app -->
+  <rect width="128" height="128" rx="64" fill="#151d28" />
+  <circle cx="64" cy="64" r="62" stroke="#00e599" stroke-opacity="0.35" stroke-width="2" />
+
+  <!-- Cabeza / Silueta -->
+  <circle cx="64" cy="50" r="22" fill="#222e3f" stroke="#00e599" stroke-width="2.5" stroke-opacity="0.8" />
+
+  <!-- Hombros / Torso -->
+  <path d="M28 106 C28 86 44 76 64 76 C84 76 100 86 100 106" fill="#222e3f" stroke="#00e599" stroke-width="2.5" stroke-opacity="0.8" stroke-linecap="round" />
+
+  <!-- Detalle sutil de circuito / chip en el centro del pecho -->
+  <line x1="64" y1="84" x2="64" y2="98" stroke="#00e599" stroke-width="2" stroke-linecap="round" />
+  <circle cx="64" cy="91" r="2" fill="#00e599" />
+</svg>

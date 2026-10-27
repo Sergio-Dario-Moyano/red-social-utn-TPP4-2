@@ -1,0 +1,50 @@
+<nav class="navbar">
+  <div class="nav-brand">
+    <a routerLink="/" class="brand-link">
+      <svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+        <rect x="12" y="14" width="24" height="24" rx="12" class="bug-body" stroke-width="2.5"/>
+        <path d="M18 14C16 9 12 9 10 11" class="bug-antenna" stroke-width="2" stroke-linecap="round"/>
+        <path d="M30 14C32 9 36 9 38 11" class="bug-antenna" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="20" cy="22" r="2" class="bug-eye"/>
+        <circle cx="28" cy="22" r="2" class="bug-eye"/>
+        <path d="M21 29Q24 33 27 29" class="bug-smile" stroke-width="2" stroke-linecap="round"/>
+        <path d="M8 22H12M8 30H12M36 22H40M36 30H40" class="bug-legs" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-text">UTN-<span>BUGS</span></span>
+    </a>
+  </div>
+
+  <button
+    type="button"
+    class="nav-toggle"
+    (click)="menuAbierto = !menuAbierto"
+    aria-label="Abrir menú"
+  >
+    <span class="bar" [class.bar-top]="menuAbierto"></span>
+    <span class="bar" [class.bar-mid]="menuAbierto"></span>
+    <span class="bar" [class.bar-bot]="menuAbierto"></span>
+  </button>
+
+  <div class="nav-links" [class.is-open]="menuAbierto">
+    @if (usuario) {
+      <a routerLink="/publicaciones" routerLinkActive="activo" (click)="menuAbierto = false">
+        Publicaciones
+      </a>
+      <a routerLink="/mi-perfil" routerLinkActive="activo" class="link-perfil" (click)="menuAbierto = false">
+        <span class="perfil-avatar">{{ usuario.nombre.charAt(0).toUpperCase() }}</span>
+        <span>{{ usuario.nombre }}</span>
+      </a>
+      <button type="button" class="btn-logout" (click)="onLogout()">
+        Cerrar Sesión
+      </button>
+    } @else {
+      <a routerLink="/login" routerLinkActive="activo" (click)="menuAbierto = false">
+        Iniciar Sesión
+      </a>
+      <a routerLink="/registro" routerLinkActive="activo" class="btn-registro-link" (click)="menuAbierto = false">
+        Registrarse
+      </a>
+    }
+  </div>
+</nav>
+

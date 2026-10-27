@@ -1,0 +1,45 @@
+<section class="perfil-container">
+  <div class="perfil-card">
+    @if (authService.usuarioActual(); as user) {
+      <header class="perfil-header">
+        @if (user.fotoPerfil) {
+          <img
+            [src]="user.fotoPerfil"
+            [alt]="user.nombreUsuario"
+            (error)="$any($event.target).src = 'assets/default-avatar.svg'"
+            class="profile-img"
+          />
+        } @else {
+          <div class="perfil-avatar-fallback">{{ user.nombre.charAt(0).toUpperCase() }}</div>
+        }
+        <div class="perfil-titles">
+          <h2>{{ user.nombre }} {{ user.apellido }}</h2>
+          <span class="perfil-username">{{ user.nombreUsuario }}</span>
+          <span class="perfil-badge" [class.perfil-badge--admin]="user.perfil === 'administrador'">
+            {{ user.perfil }}
+          </span>
+        </div>
+      </header>
+
+      <div class="perfil-body">
+        <div class="perfil-item">
+          <span class="label">Correo:</span>
+          <span class="value">{{ user.correo }}</span>
+        </div>
+        <div class="perfil-item">
+          <span class="label">Fecha de Nacimiento:</span>
+          <span class="value">{{ user.fechaNacimiento | date:'dd/MM/yyyy':'UTC' }}</span>
+        </div>
+        <div class="perfil-item perfil-item--full">
+          <span class="label">Descripción:</span>
+          <p class="value desc">{{ user.descripcionBreve }}</p>
+        </div>
+      </div>
+    } @else {
+      <div class="perfil-vacio">
+        <h2>Mi Perfil</h2>
+        <p>No hay un usuario autenticado en la sesión actual.</p>
+      </div>
+    }
+  </div>
+</section>

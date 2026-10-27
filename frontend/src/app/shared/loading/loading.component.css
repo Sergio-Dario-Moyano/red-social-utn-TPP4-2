@@ -1,0 +1,94 @@
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(10, 14, 20, 0.82);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.spinner-wrapper {
+  position: relative;
+  width: 84px;
+  height: 84px;
+}
+
+.bug-spinner {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Rotación suave del halo exterior */
+.spinner-orbit {
+  transform-origin: 24px 24px;
+  animation: orbit-rotate 1.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+/* Pulso y resplandor del núcleo del bug */
+.bug-core {
+  transform-origin: 24px 24px;
+  animation: bug-glow-pulse 2s ease-in-out infinite;
+
+  .bug-chassis {
+    filter: drop-shadow(0 0 4px rgba(0, 229, 153, 0.35));
+  }
+
+  .bug-leg,
+  .bug-antenna {
+    opacity: 0.8;
+  }
+
+  .bug-node,
+  .bug-eye {
+    filter: drop-shadow(0 0 3px var(--accent-primary));
+  }
+}
+
+.loading-text {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-main);
+  letter-spacing: 0.4px;
+  margin: 0;
+  animation: text-pulse 2s ease-in-out infinite alternate;
+}
+
+/* Keyframes */
+@keyframes orbit-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bug-glow-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px rgba(0, 229, 153, 0.2));
+  }
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 10px rgba(0, 229, 153, 0.65));
+  }
+}
+
+@keyframes text-pulse {
+  0% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 1;
+  }
+}
