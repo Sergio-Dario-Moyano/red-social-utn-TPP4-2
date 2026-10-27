@@ -6,7 +6,7 @@ export const environment = {
 // frontend/src/environments/environment.prod.ts
 
   production: true,
-  apiUrl: 'https://utn-bugs-backend.onrender.com/api',
-  uploadsUrl: 'https://utn-bugs-backend.onrender.com/uploads'
+  apiUrl: 'https://red-social-utn-tpp4-2.onrender.com/api',
+  uploadsUrl: 'https://red-social-utn-tpp4-2.onrender.com/uploads'
 
 };
