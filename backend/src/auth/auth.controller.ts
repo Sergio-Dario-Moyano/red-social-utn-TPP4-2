@@ -46,12 +46,11 @@ export class AuthController {
     FileInterceptor('imagenPerfil', {
       storage: diskStorage({
         destination: (_req, _file, cb) => {
-          const ruta = './uploads/perfiles';
-          // Si la carpeta no existe en Render, la crea en el momento
-          if (!fs.existsSync(ruta)) {
-            fs.mkdirSync(ruta, { recursive: true });
+          const dir = join(process.cwd(), 'uploads', 'perfiles');
+          if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
           }
-          cb(null, ruta);
+          cb(null, dir);
         },
         filename: (_req, file, cb) => {
           const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
@@ -108,6 +107,7 @@ export class AuthController {
         },
       });
     } catch (error: any) {
+      console.error('*** ERROR EN REGISTRO ***:', error);
       if (error.status) {
         return res.status(error.status).json({ mensaje: error.message });
       }
