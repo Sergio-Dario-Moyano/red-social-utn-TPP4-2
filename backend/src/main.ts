@@ -2,14 +2,20 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
+import * as fs from 'fs';
+import { join } from 'path';
 
 async function bootstrap() {
+  // Asegurar físicamente la carpeta de uploads al iniciar en Render
+  const uploadDir = join(process.cwd(), 'uploads', 'perfiles');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+
   const app = await NestFactory.create(AppModule);
 
-  // Parseo de cookies para los interceptores y guards de autenticación
   app.use(cookieParser());
 
-  // Validación global de DTOs
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -18,12 +24,20 @@ async function bootstrap() {
     }),
   );
 
-  // Configuración de CORS estricta para Vercel y entorno local
+  // CORS con soporte para cualquier URL de Vercel y localhost
   app.enableCors({
-    origin: [
-      'https://red-social-utn-tpp-4-2.vercel.app',
-      'http://localhost:4200',
-    ],
+    origin: (origin:any, callback:any) => {
+      if (!origin) return callback(null, true);
+      const esValido =
+        origin.startsWith('http://localhost') ||
+        /\.vercel\.app$/.test(new URL(origin).hostname);
+
+      if (esValido) {
+        callback(null, true);
+      } else {
+        callback(new Error('Bloqueado por CORS: ' + origin));
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Origin',
@@ -35,12 +49,11 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Prefijo global para todos los endpoints
   app.setGlobalPrefix('api');
 
-  // Render asigna dinámicamente la variable PORT
   const port = process.env.PORT || 3000;
   await app.listen(port);
+  console.log(`🚀 Servidor listo en puerto ${port}`);
 }
 bootstrap();
 
