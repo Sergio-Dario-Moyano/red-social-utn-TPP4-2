@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import { join } from 'path';
 import {
   Controller,
   Post,
@@ -21,7 +23,6 @@ import { LoginDto } from './dto/login.dto.js';
 import { RegistroUsuarioDto } from '../usuarios/dto/registro-usuario.dto.js';
 import { JwtService } from '@nestjs/jwt';
 import { UsuariosRepository } from '../usuarios/usuario.repository.js';
-import * as fs from 'fs';
 
 // En producción (Render/Vercel) las cookies cruzadas requieren sameSite: 'none' y secure: true
 const isProduction = process.env.NODE_ENV === 'production';
