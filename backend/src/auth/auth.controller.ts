@@ -21,6 +21,7 @@ import { LoginDto } from './dto/login.dto.js';
 import { RegistroUsuarioDto } from '../usuarios/dto/registro-usuario.dto.js';
 import { JwtService } from '@nestjs/jwt';
 import { UsuariosRepository } from '../usuarios/usuario.repository.js';
+import * as fs from 'fs';
 
 // En producción (Render/Vercel) las cookies cruzadas requieren sameSite: 'none' y secure: true
 const isProduction = process.env.NODE_ENV === 'production';
@@ -43,7 +44,14 @@ export class AuthController {
   @UseInterceptors(
     FileInterceptor('imagenPerfil', {
       storage: diskStorage({
-        destination: './uploads/perfiles',
+        destination: (_req, _file, cb) => {
+          const ruta = './uploads/perfiles';
+          // Si la carpeta no existe en Render, la crea en el momento
+          if (!fs.existsSync(ruta)) {
+            fs.mkdirSync(ruta, { recursive: true });
+          }
+          cb(null, ruta);
+        },
         filename: (_req, file, cb) => {
           const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
           const ext = extname(file.originalname);
