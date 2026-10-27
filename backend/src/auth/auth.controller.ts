@@ -11,6 +11,7 @@ import {
   HttpCode,
   UnauthorizedException,
   BadRequestException,
+  HttpException,
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
@@ -24,7 +25,13 @@ import { RegistroUsuarioDto } from '../usuarios/dto/registro-usuario.dto.js';
 import { JwtService } from '@nestjs/jwt';
 import { UsuariosRepository } from '../usuarios/usuario.repository.js';
 
-// En producción (Render/Vercel) las cookies cruzadas requieren sameSite: 'none' y secure: true
+// Carpeta física absoluta garantizada en tiempo de carga
+const destinoPerfiles = join(process.cwd(), 'uploads', 'perfiles');
+if (!fs.existsSync(destinoPerfiles)) {
+  fs.mkdirSync(destinoPerfiles, { recursive: true });
+}
+
+// Configuración de cookie para dominios cruzados en producción (Vercel <-> Render)
 const isProduction = process.env.NODE_ENV === 'production';
 const cookieOptions = {
   httpOnly: true,
@@ -45,13 +52,7 @@ export class AuthController {
   @UseInterceptors(
     FileInterceptor('imagenPerfil', {
       storage: diskStorage({
-        destination: (_req, _file, cb) => {
-          const dir = join(process.cwd(), 'uploads', 'perfiles');
-          if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-          }
-          cb(null, dir);
-        },
+        destination: destinoPerfiles,
         filename: (_req, file, cb) => {
           const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
           const ext = extname(file.originalname);
@@ -59,7 +60,7 @@ export class AuthController {
         },
       }),
       fileFilter: (_req, file, cb) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/i)) {
           return cb(
             new BadRequestException(
               'Solo se admiten archivos de imagen (jpg, jpeg, png, webp)',
@@ -81,8 +82,10 @@ export class AuthController {
         throw new BadRequestException('La imagen de perfil es obligatoria');
       }
 
-      // Si está en Render usa la URL pública; si es local usa localhost:3000
-      const baseUrl = process.env.BASE_URL || 'https://red-social-utn-tpp4-2.onrender.com';
+      const baseUrl = isProduction
+        ? 'https://red-social-utn-tpp4-2.onrender.com'
+        : 'http://localhost:3000';
+
       const fotoPerfilUrl = `${baseUrl}/uploads/perfiles/${file.filename}`;
 
       const { usuario, token } = await this.authService.registrarUsuario(
@@ -107,13 +110,22 @@ export class AuthController {
         },
       });
     } catch (error: any) {
-      console.error('*** ERROR EN REGISTRO ***:', error);
-      if (error.status) {
-        return res.status(error.status).json({ mensaje: error.message });
+      console.error('*** ERROR CAPTURADO EN REGISTRO ***:', error);
+
+      if (error instanceof HttpException) {
+        return res.status(error.getStatus()).json(error.getResponse());
       }
+
+      if (error?.code === 11000) {
+        const campo = Object.keys(error.keyPattern || {})[0] || 'campo';
+        return res.status(HttpStatus.CONFLICT).json({
+          mensaje: `El ${campo} ingresado ya se encuentra registrado.`,
+        });
+      }
+
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        mensaje: 'Error interno en el servidor',
-        detalle: error.message || error,
+        mensaje: 'Error interno en el servidor al registrar el usuario',
+        detalle: error?.message || error,
       });
     }
   }
@@ -141,8 +153,8 @@ export class AuthController {
         },
       });
     } catch (error: any) {
-      if (error.status) {
-        return res.status(error.status).json({ mensaje: error.message });
+      if (error instanceof HttpException) {
+        return res.status(error.getStatus()).json(error.getResponse());
       }
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         mensaje: 'Error interno en el servidor',
@@ -165,6 +177,14 @@ export class AuthController {
         throw new UnauthorizedException('Usuario no encontrado');
       }
 
+      let fotoSanitizada = usuario.fotoPerfil;
+      if (fotoSanitizada && fotoSanitizada.includes('localhost:3000')) {
+        fotoSanitizada = fotoSanitizada.replace(
+          'http://localhost:3000',
+          'https://red-social-utn-tpp4-2.onrender.com',
+        );
+      }
+
       return res.status(HttpStatus.OK).json({
         id: usuario._id,
         nombre: usuario.nombre,
@@ -173,7 +193,7 @@ export class AuthController {
         nombreUsuario: usuario.nombreUsuario,
         fechaNacimiento: usuario.fechaNacimiento,
         descripcionBreve: usuario.descripcionBreve,
-        fotoPerfil: usuario.fotoPerfil,
+        fotoPerfil: fotoSanitizada,
         perfil: usuario.perfil,
       });
     } catch (err) {

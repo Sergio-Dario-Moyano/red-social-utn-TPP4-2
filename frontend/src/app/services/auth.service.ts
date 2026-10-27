@@ -12,7 +12,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly loadingService = inject(LoadingService);
 
-  // Conectar con la URL de producción
+  // URL de la API obtenida dinámicamente del environment
   private readonly apiUrl = `${environment.apiUrl}/auth`;
 
   // Simulación de delay del servidor en milisegundos (1 segundo)
@@ -21,72 +21,98 @@ export class AuthService {
   usuarioActual = signal<IUsuario | null>(null);
   sesionVerificada = signal<boolean>(false);
 
+  // Normaliza enlaces a localhost para evitar el bloqueo Mixed Content en Vercel
+  private sanitizarUsuario(usuario: IUsuario | null): IUsuario | null {
+    if (!usuario) return null;
+    if (usuario.fotoPerfil && usuario.fotoPerfil.includes('localhost:3000')) {
+      return {
+        ...usuario,
+        fotoPerfil: usuario.fotoPerfil.replace(
+          'http://localhost:3000',
+          'https://red-social-utn-tpp4-2.onrender.com',
+        ),
+      };
+    }
+    return usuario;
+  }
+
   registro(datos: FormData): Observable<IAuthResponse> {
     this.loadingService.mostrar('Creando tu cuenta en UTN-BUGS...');
 
-    return this.http.post<IAuthResponse>(`${this.apiUrl}/registro`, datos, {
-      withCredentials: true,
-    }).pipe(
-      delay(this.LATENCIA_SIMULADA_MS),
-      tap((res) => {
-        this.usuarioActual.set(res.usuario);
-        this.sesionVerificada.set(true);
-      }),
-      finalize(() => this.loadingService.ocultar())
-    );
+    return this.http
+      .post<IAuthResponse>(`${this.apiUrl}/registro`, datos, {
+        withCredentials: true,
+      })
+      .pipe(
+        delay(this.LATENCIA_SIMULADA_MS),
+        tap((res) => {
+          const usuarioLimpio = this.sanitizarUsuario(res.usuario);
+          this.usuarioActual.set(usuarioLimpio);
+          this.sesionVerificada.set(true);
+        }),
+        finalize(() => this.loadingService.ocultar()),
+      );
   }
 
   login(credenciales: ILogin): Observable<IAuthResponse> {
     this.loadingService.mostrar('Iniciando sesión...');
 
-    return this.http.post<IAuthResponse>(`${this.apiUrl}/login`, credenciales, {
-      withCredentials: true,
-    }).pipe(
-      delay(this.LATENCIA_SIMULADA_MS),
-      tap((res) => {
-        this.usuarioActual.set(res.usuario);
-        this.sesionVerificada.set(true);
-      }),
-      finalize(() => this.loadingService.ocultar())
-    );
+    return this.http
+      .post<IAuthResponse>(`${this.apiUrl}/login`, credenciales, {
+        withCredentials: true,
+      })
+      .pipe(
+        delay(this.LATENCIA_SIMULADA_MS),
+        tap((res) => {
+          const usuarioLimpio = this.sanitizarUsuario(res.usuario);
+          this.usuarioActual.set(usuarioLimpio);
+          this.sesionVerificada.set(true);
+        }),
+        finalize(() => this.loadingService.ocultar()),
+      );
   }
 
   logout(): Observable<{ mensaje: string }> {
     this.loadingService.mostrar('Cerrando sesión...');
 
-    return this.http.post<{ mensaje: string }>(
-      `${this.apiUrl}/logout`,
-      {},
-      { withCredentials: true }
-    ).pipe(
-      delay(800),
-      tap(() => {
-        this.usuarioActual.set(null);
-        this.sesionVerificada.set(true);
-      }),
-      finalize(() => this.loadingService.ocultar())
-    );
+    return this.http
+      .post<{ mensaje: string }>(
+        `${this.apiUrl}/logout`,
+        {},
+        { withCredentials: true },
+      )
+      .pipe(
+        delay(800),
+        tap(() => {
+          this.usuarioActual.set(null);
+          this.sesionVerificada.set(true);
+        }),
+        finalize(() => this.loadingService.ocultar()),
+      );
   }
 
   verificarSesion(): Observable<boolean> {
     this.loadingService.mostrar('Verificando credenciales...');
 
-    return this.http.get<IUsuario>(`${this.apiUrl}/perfil`, {
-      withCredentials: true,
-    }).pipe(
-      delay(this.LATENCIA_SIMULADA_MS),
-      map((usuario) => {
-        this.usuarioActual.set(usuario);
-        this.sesionVerificada.set(true);
-        return true;
-      }),
-      catchError(() => {
-        this.usuarioActual.set(null);
-        this.sesionVerificada.set(true);
-        return of(false);
-      }),
-      finalize(() => this.loadingService.ocultar())
-    );
+    return this.http
+      .get<IUsuario>(`${this.apiUrl}/perfil`, {
+        withCredentials: true,
+      })
+      .pipe(
+        delay(this.LATENCIA_SIMULADA_MS),
+        map((usuario) => {
+          const usuarioLimpio = this.sanitizarUsuario(usuario);
+          this.usuarioActual.set(usuarioLimpio);
+          this.sesionVerificada.set(true);
+          return true;
+        }),
+        catchError(() => {
+          this.usuarioActual.set(null);
+          this.sesionVerificada.set(true);
+          return of(false);
+        }),
+        finalize(() => this.loadingService.ocultar()),
+      );
   }
 }
 

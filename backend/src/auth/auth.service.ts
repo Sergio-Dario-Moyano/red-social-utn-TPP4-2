@@ -17,28 +17,37 @@ export class AuthService {
   ) {}
 
   async registrarUsuario(dto: RegistroUsuarioDto, fotoPerfilUrl: string) {
-    const existeCorreo = await this.usuariosRepository.buscarPorCorreo(dto.correo);
+    const correoLimpio = dto.correo.toLowerCase().trim();
+    const usernameLimpio = dto.nombreUsuario.trim();
+
+    const existeCorreo = await this.usuariosRepository.buscarPorCorreo(correoLimpio);
     if (existeCorreo) {
       throw new ConflictException('El correo electrónico ya está registrado');
     }
 
-    const existeUsername = await this.usuariosRepository.buscarPorNombreUsuario(dto.nombreUsuario);
+    const existeUsername = await this.usuariosRepository.buscarPorNombreUsuario(usernameLimpio);
     if (existeUsername) {
       throw new ConflictException('El nombre de usuario ya está registrado');
     }
 
-    // Si dto.fechaNacimiento viene como "YYYY-MM-DD":
-    const [anio, mes, dia] = dto.fechaNacimiento.split('-').map(Number);
-    const fechaUtc = new Date(Date.UTC(anio, mes - 1, dia, 12, 0, 0));
+    let fechaUtc: Date;
+    if (dto.fechaNacimiento.includes('-')) {
+      const [anio, mes, dia] = dto.fechaNacimiento.split('-').map(Number);
+      fechaUtc = new Date(Date.UTC(anio, mes - 1, dia, 12, 0, 0));
+    } else {
+      fechaUtc = new Date(dto.fechaNacimiento);
+    }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     const nuevoUsuario = await this.usuariosRepository.crear({
-      ...dto,
-      correo: dto.correo.toLowerCase().trim(),
-      nombreUsuario: dto.nombreUsuario.trim(),
+      nombre: dto.nombre.trim(),
+      apellido: dto.apellido.trim(),
+      correo: correoLimpio,
+      nombreUsuario: usernameLimpio,
       password: hashedPassword,
       fechaNacimiento: fechaUtc,
+      descripcionBreve: dto.descripcionBreve.trim(),
       fotoPerfil: fotoPerfilUrl,
       perfil: dto.perfil || 'usuario',
     });
@@ -54,7 +63,8 @@ export class AuthService {
   }
 
   async validarYAutenticar(dto: LoginDto) {
-    const usuario = await this.usuariosRepository.buscarPorCredencial(dto.credencial);
+    const credencialLimpia = dto.credencial.trim();
+    const usuario = await this.usuariosRepository.buscarPorCredencial(credencialLimpia);
     if (!usuario) {
       throw new UnauthorizedException('Credenciales inválidas');
     }

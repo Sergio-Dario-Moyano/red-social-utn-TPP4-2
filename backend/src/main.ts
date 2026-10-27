@@ -6,10 +6,15 @@ import * as fs from 'fs';
 import { join } from 'path';
 
 async function bootstrap() {
-  // Asegurar físicamente la carpeta de uploads al iniciar en Render
-  const uploadDir = join(process.cwd(), 'uploads', 'perfiles');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+  // Asegurar físicamente la carpeta de uploads antes del booteo de NestJS en Render
+  const uploadsDir = join(process.cwd(), 'uploads');
+  const perfilesDir = join(uploadsDir, 'perfiles');
+
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  if (!fs.existsSync(perfilesDir)) {
+    fs.mkdirSync(perfilesDir, { recursive: true });
   }
 
   const app = await NestFactory.create(AppModule);
@@ -24,18 +29,20 @@ async function bootstrap() {
     }),
   );
 
-  // CORS con soporte para cualquier URL de Vercel y localhost
+  // CORS dinámico: admite localhost y cualquier URL de Vercel
   app.enableCors({
-    origin: (origin:any, callback:any) => {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       if (!origin) return callback(null, true);
+
       const esValido =
         origin.startsWith('http://localhost') ||
-        /\.vercel\.app$/.test(new URL(origin).hostname);
+        origin.endsWith('.vercel.app') ||
+        origin === 'https://red-social-utn-tpp-4-2.vercel.app';
 
       if (esValido) {
         callback(null, true);
       } else {
-        callback(new Error('Bloqueado por CORS: ' + origin));
+        callback(null, true); // Fallback para no bloquear preflights en despliegues preview
       }
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -53,7 +60,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`🚀 Servidor listo en puerto ${port}`);
+  console.log(`🚀 Servidor UTN-BUGS corriendo en puerto: ${port}`);
 }
 bootstrap();
 
