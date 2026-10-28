@@ -1,5 +1,3 @@
-import * as fs from 'fs';
-import { join } from 'path';
 import {
   Controller,
   Post,
@@ -16,20 +14,14 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { memoryStorage } from 'multer';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegistroUsuarioDto } from '../usuarios/dto/registro-usuario.dto.js';
 import { JwtService } from '@nestjs/jwt';
 import { UsuariosRepository } from '../usuarios/usuario.repository.js';
-
-// Carpeta física absoluta garantizada en tiempo de carga
-const destinoPerfiles = join(process.cwd(), 'uploads', 'perfiles');
-if (!fs.existsSync(destinoPerfiles)) {
-  fs.mkdirSync(destinoPerfiles, { recursive: true });
-}
+import { CloudinaryService } from '../common/cloudinary.service.js';
 
 // Configuración de cookie para dominios cruzados en producción (Vercel <-> Render)
 const isProduction = process.env.NODE_ENV === 'production';
@@ -46,19 +38,13 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly jwtService: JwtService,
     private readonly usuariosRepository: UsuariosRepository,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   @Post('registro')
   @UseInterceptors(
     FileInterceptor('imagenPerfil', {
-      storage: diskStorage({
-        destination: destinoPerfiles,
-        filename: (_req, file, cb) => {
-          const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-          const ext = extname(file.originalname);
-          cb(null, `avatar-${uniqueSuffix}${ext}`);
-        },
-      }),
+      storage: memoryStorage(),
       fileFilter: (_req, file, cb) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/i)) {
           return cb(
@@ -70,6 +56,7 @@ export class AuthController {
         }
         cb(null, true);
       },
+      limits: { fileSize: 5 * 1024 * 1024 }, // Límite de 5 MB
     }),
   )
   async registro(
@@ -82,11 +69,8 @@ export class AuthController {
         throw new BadRequestException('La imagen de perfil es obligatoria');
       }
 
-      const baseUrl = isProduction
-        ? 'https://red-social-utn-tpp4-2.onrender.com'
-        : 'http://localhost:3000';
-
-      const fotoPerfilUrl = `${baseUrl}/uploads/perfiles/${file.filename}`;
+      // Sube la imagen directamente a Cloudinary y obtiene la URL HTTPS segura
+      const fotoPerfilUrl = await this.cloudinaryService.subirImagen(file);
 
       const { usuario, token } = await this.authService.registrarUsuario(
         registroDto,
@@ -177,14 +161,6 @@ export class AuthController {
         throw new UnauthorizedException('Usuario no encontrado');
       }
 
-      let fotoSanitizada = usuario.fotoPerfil;
-      if (fotoSanitizada && fotoSanitizada.includes('localhost:3000')) {
-        fotoSanitizada = fotoSanitizada.replace(
-          'http://localhost:3000',
-          'https://red-social-utn-tpp4-2.onrender.com',
-        );
-      }
-
       return res.status(HttpStatus.OK).json({
         id: usuario._id,
         nombre: usuario.nombre,
@@ -193,7 +169,7 @@ export class AuthController {
         nombreUsuario: usuario.nombreUsuario,
         fechaNacimiento: usuario.fechaNacimiento,
         descripcionBreve: usuario.descripcionBreve,
-        fotoPerfil: fotoSanitizada,
+        fotoPerfil: usuario.fotoPerfil,
         perfil: usuario.perfil,
       });
     } catch (err) {

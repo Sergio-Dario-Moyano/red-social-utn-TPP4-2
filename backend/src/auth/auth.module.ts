@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { UsuariosModule } from '../usuarios/usuarios.module.js';
+import { CloudinaryService } from '../common/cloudinary.service.js';
 
 @Module({
   imports: [
@@ -12,13 +13,15 @@ import { UsuariosModule } from '../usuarios/usuarios.module.js';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'clave_secreta_utn_progra4_2026',
+        secret:
+          configService.get<string>('JWT_SECRET') ||
+          'clave_secreta_utn_progra4_2026',
         signOptions: { expiresIn: '24h' },
       }),
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, CloudinaryService],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

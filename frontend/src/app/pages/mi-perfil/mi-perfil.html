@@ -6,7 +6,7 @@
           <img
             [src]="user.fotoPerfil"
             [alt]="user.nombreUsuario"
-            (error)="$any($event.target).src = 'assets/default-avatar.svg'"
+            (error)="$any($event.target).style.display = 'none'"
             class="profile-img"
           />
         } @else {
